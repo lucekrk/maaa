@@ -1,17 +1,22 @@
 import discord
+import os
 import requests
 import datetime
 import asyncio
 from zoneinfo import ZoneInfo
 
+from keep_alive import keep_alive
+
 # --- Konfiguracja Bota ---
-TOKEN = "MTM5MjMwOTA1MTk3NDc0NjExMg.Gu5vnZ.XAvrV_VPsfyEDsiwJAjzs32A5MMMzl94ujnONc"
+TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = 1392322488519757834  # ID kanału do wysyłania
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
 last_message_id = None  # Zapamiętujemy ID wiadomości, żeby edytować a nie spamować
+
+keep_alive()
 
 # --- Funkcja Pobierania Danych ---
 def fetch_data():
