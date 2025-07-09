@@ -53,40 +53,41 @@ def fetch_data():
 # --- Funkcja Tworzenia Estetycznego Embedu ---
 def create_embed(orgs, captures):
     """
-    Tworzy ładnie sformatowany embed Discorda z topką organizacji
-    i ostatnimi przejęciami stref.
+    Tworzy ładnie sformatowany embed Discorda z topką organizacji,
+    ostatnimi przejęciami i stanem stref.
     """
     embed = discord.Embed(
-        title="🏆 Ranking Organizacji i Ostatnie Przejęcia Stref 🌍",
-        description="", # Usunięto opis zgodnie z prośbą
+        title="🏆 Ranking Organizacji, Przejęcia i Stan Stref 🌍",
         color=0x3498db
     )
 
-    # Lewa kolumna - Topka organizacji
+    # 📈 Top Organizacje
     top_text = ""
     if orgs:
         sorted_orgs = sorted(orgs, key=lambda x: x.get('points', 0), reverse=True)
-        for i, org in enumerate(sorted_orgs[:10]): # Ogranicz do top 10
+        for i, org in enumerate(sorted_orgs[:10]):  # Top 10
             emoji = ""
-            if i == 0: emoji = "🥇 "
-            elif i == 1: emoji = "🥈 "
-            elif i == 2: emoji = "🥉 "
-            elif i < 5: emoji = "🏅 "
-            else: emoji = f"#{i+1}. " # Numeracja dla kolejnych miejsc
-
+            if i == 0:
+                emoji = "🥇 "
+            elif i == 1:
+                emoji = "🥈 "
+            elif i == 2:
+                emoji = "🥉 "
+            elif i < 5:
+                emoji = "🏅 "
+            else:
+                emoji = f"#{i+1}. "
             top_text += f"{emoji}**{org.get('name', 'N/A')}**: `{org.get('points', 0)} pkt`\n"
     else:
         top_text = "Niestety, brak danych o organizacjach."
-
     embed.add_field(name="📈 Top Organizacje", value=top_text, inline=True)
 
-    # Prawa kolumna - 3 ostatnie przejęcia
+    # ⏳ Ostatnie Przejęcia Stref
     captures_text = ""
     last_three = captures[:3] if captures else []
     if last_three:
         for i, cap in enumerate(last_three):
             status_emoji = "✅" if cap.get("success", 0) == 1 else "❌"
-            # Dodanie nagłówka dla każdego przejęcia i użycie code blocków dla czytelności
             captures_text += (
                 f"**#{i+1} Przejęcie:**\n"
                 f"```yaml\n"
@@ -98,26 +99,40 @@ def create_embed(orgs, captures):
             )
     else:
         captures_text = "Brak zarejestrowanych przejęć."
-
     embed.add_field(name="⏳ Ostatnie Przejęcia Stref", value=captures_text, inline=True)
 
-    # Ustawienie stopki z ikoną i dynamicznym czasem
-     # Importuj ZoneInfo na początku pliku, jeśli go tam jeszcze nie ma
+    # 🗺️ Aktualny Stan Stref
+    zone_status = {}
+    if captures:
+        # Przeskanuj przejęcia od najnowszych do najstarszych
+        for cap in captures:
+            if cap.get("success", 0) == 1:
+                zone = cap.get("zone")
+                by = cap.get("by")
+                if zone not in zone_status:
+                    zone_status[zone] = by
 
+    if zone_status:
+        zones_text = ""
+        for zone, org in zone_status.items():
+            zones_text += f"**{zone}** ➜ `{org}`\n"
+    else:
+        zones_text = "Brak danych o stanie stref."
+
+    embed.add_field(name="🗺️ Stan Stref", value=zones_text, inline=False)
+
+    # Stopka
     poland_tz = ZoneInfo("Europe/Warsaw")
-    current_time = datetime.datetime.now(poland_tz).strftime('%Y-%m-%d       %H:%M:%S')
-
+    current_time = datetime.datetime.now(poland_tz).strftime('%Y-%m-%d %H:%M:%S')
     embed.set_footer(
         text=f"Ostatnia aktualizacja: {current_time}",
         icon_url="https://cdn-icons-png.flaticon.com/512/1040/1040220.png"
     )
+
     return embed
 
 # --- Funkcja Aktualizująca Wiadomość ---
 async def update_message(channel):
-    """
-    Pobiera dane, tworzy embed i wysyła/edytuje wiadomość na kanale.
-    """
     global last_message_id
     orgs, captures = await asyncio.to_thread(fetch_data)
     embed = create_embed(orgs, captures)
@@ -138,12 +153,8 @@ async def update_message(channel):
         except Exception as e:
             print(f"Nieoczekiwany błąd podczas edycji wiadomości: {e}")
 
-
 # --- Zadanie w Tle ---
 async def background_task():
-    """
-    Pętla odpowiedzialna za regularne odświeżanie wiadomości.
-    """
     await client.wait_until_ready()
     channel = client.get_channel(CHANNEL_ID)
     if not channel:
@@ -157,9 +168,6 @@ async def background_task():
 # --- Obsługa Zdarzeń Bota ---
 @client.event
 async def on_ready():
-    """
-    Wywoływane, gdy bot jest gotowy i zalogowany.
-    """
     print(f"Zalogowano jako {client.user}!")
     print(f"Bot jest aktywny na {len(client.guilds)} serwerach.")
     client.loop.create_task(background_task())
