@@ -57,7 +57,7 @@ def create_embed(orgs, captures):
     ostatnimi przejęciami i stanem stref.
     """
     embed = discord.Embed(
-        title="🏆 Ranking Organizacji, Przejęcia i Stan Stref 🌍",
+        title="🏆 Ranking Organizacji, Przejęcia i Stan Stref 🌍 BY LUCEKRK",
         color=0x3498db
     )
 
